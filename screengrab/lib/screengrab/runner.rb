@@ -61,6 +61,10 @@ module Screengrab
         determine_internal_screenshots_paths(@config[:app_package_name], @config[:locales])
       ].flatten
 
+      if @config[:ui_mode] != 'keep'
+        set_ui_mode(@config[:ui_mode])
+      end
+
       # Root is needed to access device paths at /data
       if @config[:use_adb_root]
         run_adb_command("root", print_all: false, print_command: true)
@@ -411,6 +415,41 @@ module Screengrab
       # Enable the SystemUI demo mode
       run_adb_command("-s #{device_serial} shell settings put global sysui_demo_allowed 1",
                       print_all: true, print_command: true)
+    end
+
+    def set_ui_mode(mode)
+      UI.message("Setting UI mode to '#{mode}'")
+
+      case mode
+      when 'light'
+        if run_adb_command("shell settings get secure ui_night_mode", print_all: false, print_command: false) != 1
+          run_adb_command("shell settings put secure ui_night_mode 1", print_all: false, print_command: true)
+
+          UI.message("Change of UI mode requires an emulator reboot")
+          run_adb_command("reboot", print_all: false, print_command: true)
+          wait_for_device_boot_completed
+        else
+          UI.message("Device already in required UI mode")
+        end
+      when 'dark'
+        if run_adb_command("shell settings get secure ui_night_mode", print_all: false, print_command: false) != 2
+          run_adb_command("shell settings put secure ui_night_mode 2", print_all: false, print_command: true)
+
+          UI.message("Change of UI mode requires an emulator reboot")
+          run_adb_command("reboot", print_all: false, print_command: true)
+          wait_for_device_boot_completed
+        else
+          UI.message("Device already in required UI mode")
+        end
+      end
+    end
+
+    def wait_for_device_boot_completed
+      UI.message("Waiting for device to complete booting")
+      # source: https://android.stackexchange.com/a/164050
+      boot_wait_loop = 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done; input keyevent 82'
+      run_adb_command("wait-for-device shell '#{boot_wait_loop}'", print_all: false, print_command: true)
+      sleep(2)
     end
   end
 end

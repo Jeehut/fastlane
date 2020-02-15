@@ -5,6 +5,7 @@ require_relative 'module'
 module Screengrab
   class Options
     DEVICE_TYPES = ["phone", "sevenInch", "tenInch", "tv", "wear"].freeze
+    UI_MODES = ["light", "dark", "keep"].freeze
 
     # Temporarily make non-Mac environments default to skipping the open summary
     # step until we make it cross-platform
@@ -141,7 +142,11 @@ module Screengrab
         FastlaneCore::ConfigItem.new(key: :adb_host,
                                      env_name: 'SCREENGRAB_ADB_HOST',
                                      description: "Configure the host used by adb to connect, allows running on remote devices farm",
-                                     optional: true)
+                                     optional: true),
+        FastlaneCore::ConfigItem.new(key: :ui_mode,
+                                     env_name: 'SCREENGRAB_UI_MODE',
+                                     description: "Use this option to force the device to 'light' or 'dark' mode",
+                                     default_value: 'keep')
       ]
     end
   end
